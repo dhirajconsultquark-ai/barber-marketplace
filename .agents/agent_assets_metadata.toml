@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "NUJ8cJT7pP2Eern8e36yX"
+uri = "file://barber-marketplace-codebase.tar.gz"
+type = "unspecified"
+title = "Barber Marketplace — Full Codebase"
