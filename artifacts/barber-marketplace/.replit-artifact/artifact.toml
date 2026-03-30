@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Barber Marketplace"
+version = "1.0.0"
+id = "artifacts/barber-marketplace"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20827
+
+[services.development]
+run = "pnpm --filter @workspace/barber-marketplace run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/barber-marketplace", "run", "build" ]
+publicDir = "artifacts/barber-marketplace/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20827"
+BASE_PATH = "/"

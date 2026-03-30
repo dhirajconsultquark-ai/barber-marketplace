@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Barber Marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: shops
+    description: Barber shop operations
+  - name: services
+    description: Shop services
+  - name: bookings
+    description: Booking management
+  - name: reviews
+    description: Reviews and ratings
+  - name: admin
+    description: Admin moderation
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,572 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user session
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /shops:
+    get:
+      operationId: listShops
+      tags: [shops]
+      summary: List approved barber shops
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of shops
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopListResponse"
+
+    post:
+      operationId: createShop
+      tags: [shops]
+      summary: Create a new barber shop (barber role)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShopRequest"
+      responses:
+        "201":
+          description: Shop created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shop"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shops/{shopId}:
+    get:
+      operationId: getShop
+      tags: [shops]
+      summary: Get a barber shop by ID
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Shop details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      operationId: updateShop
+      tags: [shops]
+      summary: Update a barber shop (owner only)
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateShopRequest"
+      responses:
+        "200":
+          description: Updated shop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shop"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shops/my:
+    get:
+      operationId: getMyShop
+      tags: [shops]
+      summary: Get the current barber's own shop
+      responses:
+        "200":
+          description: My shop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopDetail"
+        "404":
+          description: No shop found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shops/{shopId}/services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List services for a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Add a service to a shop (owner only)
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /shops/{shopId}/services/{serviceId}:
+    put:
+      operationId: updateService
+      tags: [services]
+      summary: Update a service (owner only)
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete a service (owner only)
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Service deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /bookings:
+    get:
+      operationId: listBookings
+      tags: [bookings]
+      summary: List bookings for current user
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
+    post:
+      operationId: createBooking
+      tags: [bookings]
+      summary: Create a booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bookings/{bookingId}:
+    get:
+      operationId: getBooking
+      tags: [bookings]
+      summary: Get booking details
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+    put:
+      operationId: updateBookingStatus
+      tags: [bookings]
+      summary: Update booking status (barber or customer)
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBookingStatusRequest"
+      responses:
+        "200":
+          description: Updated booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /shops/{shopId}/bookings:
+    get:
+      operationId: listShopBookings
+      tags: [bookings]
+      summary: List bookings for a shop (barber owner only)
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Shop bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
+  /shops/{shopId}/reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      summary: List reviews for a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Create a review for a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewRequest"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/shops:
+    get:
+      operationId: adminListShops
+      tags: [admin]
+      summary: Admin - list all shops with status
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+      responses:
+        "200":
+          description: All shops
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopListResponse"
+
+  /admin/shops/{shopId}/approve:
+    post:
+      operationId: approveShop
+      tags: [admin]
+      summary: Admin - approve a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Shop approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shop"
+
+  /admin/shops/{shopId}/reject:
+    post:
+      operationId: rejectShop
+      tags: [admin]
+      summary: Admin - reject a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectShopRequest"
+      responses:
+        "200":
+          description: Shop rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shop"
+
+  /admin/reviews/{reviewId}/moderate:
+    delete:
+      operationId: moderateReview
+      tags: [admin]
+      summary: Admin - remove a review
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Review removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin]
+      summary: Admin - list all users
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +613,353 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: number
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [customer, barber, admin]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - name
+        - role
+        - createdAt
+
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        name:
+          type: string
+        role:
+          type: string
+          enum: [customer, barber]
+      required:
+        - email
+        - password
+        - name
+        - role
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    Shop:
+      type: object
+      properties:
+        id:
+          type: number
+        ownerId:
+          type: number
+        name:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        rejectionReason:
+          type: string
+          nullable: true
+        averageRating:
+          type: number
+          nullable: true
+        reviewCount:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - ownerId
+        - name
+        - description
+        - address
+        - city
+        - phone
+        - status
+        - reviewCount
+        - createdAt
+
+    ShopDetail:
+      allOf:
+        - $ref: "#/components/schemas/Shop"
+        - type: object
+          properties:
+            services:
+              type: array
+              items:
+                $ref: "#/components/schemas/Service"
+            ownerName:
+              type: string
+          required:
+            - services
+            - ownerName
+
+    ShopListResponse:
+      type: object
+      properties:
+        shops:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shop"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+      required:
+        - shops
+        - total
+        - page
+        - limit
+
+    CreateShopRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+      required:
+        - name
+        - description
+        - address
+        - city
+        - phone
+
+    UpdateShopRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+
+    RejectShopRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+      required:
+        - reason
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: number
+        shopId:
+          type: number
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+        durationMinutes:
+          type: number
+      required:
+        - id
+        - shopId
+        - name
+        - price
+        - durationMinutes
+
+    CreateServiceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+        durationMinutes:
+          type: number
+      required:
+        - name
+        - price
+        - durationMinutes
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: number
+        customerId:
+          type: number
+        shopId:
+          type: number
+        serviceId:
+          type: number
+        status:
+          type: string
+          enum: [pending, confirmed, completed, cancelled]
+        scheduledAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+        shopName:
+          type: string
+        serviceName:
+          type: string
+        servicePrice:
+          type: number
+        customerName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - customerId
+        - shopId
+        - serviceId
+        - status
+        - scheduledAt
+        - shopName
+        - serviceName
+        - servicePrice
+        - customerName
+        - createdAt
+
+    CreateBookingRequest:
+      type: object
+      properties:
+        shopId:
+          type: number
+        serviceId:
+          type: number
+        scheduledAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+      required:
+        - shopId
+        - serviceId
+        - scheduledAt
+
+    UpdateBookingStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [confirmed, completed, cancelled]
+      required:
+        - status
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: number
+        shopId:
+          type: number
+        customerId:
+          type: number
+        customerName:
+          type: string
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - shopId
+        - customerId
+        - customerName
+        - rating
+        - createdAt
+
+    CreateReviewRequest:
+      type: object
+      properties:
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+      required:
+        - rating

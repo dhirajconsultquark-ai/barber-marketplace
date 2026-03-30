@@ -1,0 +1,22 @@
+packages:
+  "framer-motion": "For page transitions and smooth UI animations"
+  "date-fns": "For formatting dates and times nicely"
+  "lucide-react": "For icons throughout the app"
+  "clsx": "For class name merging"
+  "tailwind-merge": "For class name merging without conflicts"
+
+images:
+  - path: "artifacts/barber-marketplace/public/images/hero-bg.png"
+    description: "Dark, moody, premium barbershop interior, soft spotlighting, leather vintage chairs, brass accents, highly cinematic and professional"
+    aspect_ratio: "16:9"
+  - path: "artifacts/barber-marketplace/public/images/barber-tools.png"
+    description: "Close up of premium barber clippers, scissors, and straight razor resting on a dark leather mat, cinematic lighting, gold and steel details"
+    aspect_ratio: "16:9"
+  - path: "artifacts/barber-marketplace/public/images/logo-icon.png"
+    description: "Minimalist geometric logo of a barber pole or scissors in solid gold/brass color on a pure black background, premium luxury brand feel"
+    aspect_ratio: "1:1"
+
+notes:
+  - The app uses generated React Query hooks from @workspace/api-client-react
+  - Auth is handled via HTTP-only cookies, we use useGetMe() to check session
+  - Tailwind v4 is configured for a dark, premium, "masculine luxury" theme
